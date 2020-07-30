@@ -18,21 +18,21 @@ class User(db.Model):
             # do not serialize the password, its a security breach
         }
 
-class Login(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+# class Login(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     email = db.Column(db.String(120), unique=True, nullable=False)
+#     password = db.Column(db.String(80), unique=False, nullable=False)
+#     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
-    def __repr__(self):
-        return '<Login %r>' % self.username
+#     def __repr__(self):
+#         return '<Login %r>' % self.username
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
-        }
+#     def serialize(self):
+#         return {
+#             "id": self.id,
+#             "email": self.email,
+#             # do not serialize the password, its a security breach
+#         }
         
 class Medicalstaff(db.Model):
     __tablename__ = 'doctor'
@@ -43,6 +43,8 @@ class Medicalstaff(db.Model):
     first_name = db.Column(db.String(120))
     last_name = db.Column(db.String(120)) 
     username = db.Column(db.String(80), unique=True, nullable=False)
+    patients = db.relationship("Patient", backref="doctor")
+
     def __repr__(self):
         return '<Medicalstaff %r>' % self.first_name
     def serialize(self):
@@ -59,8 +61,7 @@ class Treatment(db.Model):
         nullable=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'),
         nullable=True)
-    diagnostic_id = db.Column(db.Integer, db.ForeignKey('diagnostic.id'),
-        nullable=True)
+    diagnostic = db.relationship("Diagnostic", backref="treatment", uselist=False)
     name = db.Column(db.String(120))
     date = db.Column(db.DateTime, nullable=True)
     hospital = db.Column(db.String(120))
@@ -68,8 +69,10 @@ class Treatment(db.Model):
     covidtest = db.Column(db.String(120))
     status = db.Column(db.String(120))
     notes = db.Column(db.String(120))
+
     def __repr__(self):
         return '<Treatment %r>' % self.name
+        
     def serialize(self):
         return {
             "id": self.id,
@@ -92,7 +95,10 @@ class Patient(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone_number = db.Column(db.String(120))
     id_number = db.Column(db.String(120))
-    
+    doctor_id = db.Column(db.Integer, db.ForeignKey("doctor.id"), nullable=False)
+    treatments = db.relationship("Treatment", backref="pacient")
+    diagnostics = db.relationship("Diagnostic", backref="pacient")
+
     def __repr__(self):
         return '<Patient %r>' % self.first_name
     def serialize(self):
@@ -100,14 +106,17 @@ class Patient(db.Model):
             "id": self.id,
             "first_name": self.first_name,
             "last_name":self.last_name,
-            "id_number":self.id_number
+            "id_number":self.id_number,
+            "doctor_id": self.doctor_id,
+            "treatments": [treatment.serialize() for treatment in self.treatments]
             # do not serialize the password, its a security breach
         }
 
 class Diagnostic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    patient_id =db.Column(db.Integer, db.ForeignKey('patient.id'),
-        nullable=True)
+    treatment_id = db.Column(db.Integer, db.ForeignKey('treatment.id'),
+        nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey("patient.id"))
     name = db.Column(db.String(120))
     covidtestresult = db.Column(db.String(120))
     date_time = db.Column(db.DateTime, nullable=True)
